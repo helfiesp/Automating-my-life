@@ -5,6 +5,7 @@
 
 // Board used: Nodemcu v3
 // Stepper motor used: Nema 17
+// Stepper motor driver board: A4988
 // Display used: 128x64 OLED
 
 #include <ESP8266WiFi.h>
