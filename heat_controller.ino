@@ -204,6 +204,7 @@ void loop() {
       }
     }
 
+  display.clearDisplay();
     if (running) {
       display.println("Running...");
     } else {
