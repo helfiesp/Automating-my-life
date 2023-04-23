@@ -71,9 +71,15 @@ void handleRoot() {
   html += "</head><body>";
   html += "<div class='heatcontrol'>";
   html += "<h1>Varmekontroll</h1>";
-  html += "<h2>Temperatur i gang: " + String(temperature) + " C<br>";
-  html += "Varmesystemet er på fra kl 00:00 til 0" + String(duration) + ":00</h2>";
-  html += "<p>Sett inn ny slutttid for å endre hvor lenge systemet står på.<br>Hvis sluttid settes til 0 vil systemet være avslått.</p>";
+  if (duration == 0){
+    html += "<h2>Systemet er: AV</h2>";
+    html += "<p>Sluttid er satt til 0, og systemet er derfor avslått.<br>Endre sluttid til å være høyere enn 0 for å slå på systemet.<br>Systemet vil være aktivt i så mange timer som sluttid er satt til.<br>Virketid er fra 00:00 til sluttid.</p>";
+  }
+  else {
+    html += "<h2>Systemet er: PÅ</h2>";
+    html += "<h2>Varmesystemet er på fra kl 00:00 til 0" + String(duration) + ":00</h2>";
+    html += "<p>Sett inn ny slutttid for å endre hvor lenge systemet står på.<br>Hvis sluttid settes til 0 vil systemet være avslått.</p>";
+  }
   html += "<form method='POST' action='/set_duration'>";
   html += "<label style='margin-right:10px;'>Sluttid:</label>";
   html += "<input style='width: 35;' type='number' name='duration' value='" + String(duration) + "' />";
