@@ -74,7 +74,7 @@ void handleRoot() {
   html += "Varmesystemet er på fra kl 00:00 til 0" + String(duration) + ":00</h2>";
   html += "<p>Sett inn ny slutttid for å endre hvor lenge systemet står på.<br>Hvis sluttid settes til 0 vil systemet være avslått.</p>";
   html += "<form method='POST' action='/set_duration'>";
-  html += "<label>Sluttid:</label>";
+  html += "<label style='margin-right:10px;'>Sluttid:</label>";
   html += "<input style='width: 35;' type='number' name='duration' value='" + String(duration) + "' />";
   html += "<br><br><input style='padding:5px;' type='submit' value='Endre sluttid' />";
   html += "</form>";
