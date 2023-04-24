@@ -11,4 +11,3 @@ Stepper motor used: Nema 17<br>
 Stepper motor driver board: A4988<br>
 Display used: 128x64 OLED<br>
 
-<img src="https://raw.githubusercontent.com/helfiesp/Automating-my-life/main/heat_controller/heatcontroller_web.png">
