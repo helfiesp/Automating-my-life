@@ -32,11 +32,11 @@ const int STEP = 12;
 const int ENABLE = 14;
 
 // Define stepper motor speed
-const int steps_per_rev = 100;
+const int steps_per_rev = 60;
 
 // Wifi information
-const char *ssid = "********************"; //Enter your WIFI ssid
-const char *password = "*************"; //Enter your WIFI password
+const char *ssid = "*************"; //Enter your WIFI ssid
+const char *password = "**********"; //Enter your WIFI password
 IPAddress local_IP(192, 168, 1, 80);
 IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 0, 0);
@@ -67,8 +67,10 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600);
 ESP8266WebServer server(80); // Create web server on port 80
 
 void handleRoot() {
-  String html = "<html><head><meta charset='UTF-8'>";
-  html += "<style>* {font-family: Calibri;}.heatcontrol {text-align: center;}</style>";
+  String html = "<html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+  html += "<style>* {font-family: Helvetica;}.heatcontrol {text-align: center;}h1, h2, p, label{ max-width: 100%; width: 90%; margin: 0 auto; margin-bottom: 10px; }";
+  html += "input[type='submit'] { padding: 10px; background-color: green; color: white; border: none; cursor: pointer; }";
+  html += "</style>";
   html += "</head><body>";
   html += "<div class='heatcontrol'>";
   html += "<h1>Varmekontroll</h1>";
@@ -88,7 +90,7 @@ void handleRoot() {
       html += "<p>Motoren er slått på med tving start knappen og kjører utenom vanlig rutine.</p>";
     }
     else {
-      html += "<h2>Systemet er: <span style='color:green';>PÅ</span></h2>";
+      html += "<h2>Systemet er: <span style='color:green';>AKTIVERT</span></h2>";
       html += "<h2>Varmesystemet er på fra kl 00:00 til 0" + String(duration) + ":00</h2>";
       html += "<p>Sett inn ny slutttid for å endre hvor lenge systemet står på.<br>Hvis sluttid settes til 0 vil systemet være avslått.</p>";
     }
@@ -116,6 +118,7 @@ void handleSetDuration() {
   if (server.hasArg("duration")) {
     duration = server.arg("duration").toInt();
   }
+  DisplayStatus();
   handleRoot();
 }
 
@@ -124,12 +127,14 @@ void handleStartMotor() {
   // This can be done if the temperature is so low so that the system needs to be started outside of the normal cycle
   RunStepperMotor(0);
   forced_run = true;
+  DisplayStatus();
   handleRoot();
 }
 
 void handleStopMotor() {
   RunStepperMotor(1);
   forced_run = false;
+  DisplayStatus();
   handleRoot();
 }
 
@@ -205,6 +210,24 @@ void RunStepperMotor(int direction) {
   digitalWrite(ENABLE,HIGH); // Disable stepper motor 
 }
 
+void DisplayStatus() {
+  DisplayInit();
+  if(forced_run) {
+    display.println("Aktiv");
+    display.println("Tvunget");
+  }
+  else if(duration == 0){
+    display.println("Inaktiv");
+  }
+  else {
+    display.println("Aktivert");
+    display.print("00 -> 0");
+    display.println(duration);
+  }
+  display.display();
+}
+
+
 void loop()   {
   unsigned long currentTime = millis(); // Get current time in milliseconds
 
@@ -241,28 +264,11 @@ void loop()   {
         running = false;
       }
     }
-    DisplayInit();
-    if(duration == 0){
-      display.println("Status: AV");
-    }
-    else {
-      display.print("Status: ");
-      display.println(duration);
-    }
-    display.display();
+    DisplayStatus();
   }
   if(first_run) {  
-    DisplayInit();
-    if(duration == 0){
-      display.println("Status: AV");
-    }
-    else {
-      display.print("Status: ");
-      display.println(duration);
-    }
-    display.display();
+    DisplayStatus();
     first_run = false;
   }
-
   server.handleClient();
 }
