@@ -35,8 +35,8 @@ const int ENABLE = 14;
 const int steps_per_rev = 100;
 
 // Wifi information
-const char *ssid = "WIFI";
-const char *password = "PASSWORD";
+const char *ssid = "********************"; //Enter your WIFI ssid
+const char *password = "*************"; //Enter your WIFI password
 IPAddress local_IP(192, 168, 1, 80);
 IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 0, 0);
@@ -46,6 +46,7 @@ const String serverName = "http://192.168.1.90/temperature";
 
 // Initialize loop variables
 bool running = false; 
+bool forced_run = false;
 bool first_run = true;
 float temperature;
 int duration = 0; // Default duration
@@ -72,18 +73,37 @@ void handleRoot() {
   html += "<div class='heatcontrol'>";
   html += "<h1>Varmekontroll</h1>";
   if (duration == 0){
-    html += "<h2>Systemet er: AV</h2>";
-    html += "<p>Sluttid er satt til 0, og systemet er derfor avslått.<br>Endre sluttid til å være høyere enn 0 for å slå på systemet.<br>Systemet vil være aktivt i så mange timer som sluttid er satt til.<br>Virketid er fra 00:00 til sluttid.</p>";
+    if (forced_run) {
+      html += "<h2>Motor er: <span style='color:green';>AKTIV</span></h2>";  
+      html += "<p>Motoren er slått på med tving start knappen og kjører utenom vanlig rutine.</p>";
+    }
+    else {
+      html += "<h2>Systemet er: <span style='color:red;'>AV</span></h2>";
+      html += "<p>Sluttid er satt til 0, og systemet er derfor avslått.<br>Endre sluttid til å være høyere enn 0 for å slå på systemet.<br>Systemet vil være aktivt i så mange timer som sluttid er satt til.<br>Virketid er fra 00:00 til sluttid.</p>";
+    }
   }
   else {
-    html += "<h2>Systemet er: PÅ</h2>";
-    html += "<h2>Varmesystemet er på fra kl 00:00 til 0" + String(duration) + ":00</h2>";
-    html += "<p>Sett inn ny slutttid for å endre hvor lenge systemet står på.<br>Hvis sluttid settes til 0 vil systemet være avslått.</p>";
+    if (forced_run) {
+      html += "<h2>Motor er: <span style='color:green';>AKTIV</span></h2>";  
+      html += "<p>Motoren er slått på med tving start knappen og kjører utenom vanlig rutine.</p>";
+    }
+    else {
+      html += "<h2>Systemet er: <span style='color:green';>PÅ</span></h2>";
+      html += "<h2>Varmesystemet er på fra kl 00:00 til 0" + String(duration) + ":00</h2>";
+      html += "<p>Sett inn ny slutttid for å endre hvor lenge systemet står på.<br>Hvis sluttid settes til 0 vil systemet være avslått.</p>";
+    }
   }
   html += "<form method='POST' action='/set_duration'>";
   html += "<label style='margin-right:10px;'>Sluttid:</label>";
   html += "<input style='width: 35;' type='number' name='duration' value='" + String(duration) + "' />";
   html += "<br><br><input style='padding:5px;' type='submit' value='Endre sluttid' />";
+  html += "</form>";
+  html += "<br>";
+  html += "<form method='POST' action='/start_motor'>";
+  html += "<input style='padding:5px;' type='submit' value='Tving start motor' />";
+  html += "</form>";
+  html += "<form method='POST' action='/stop_motor'>";
+  html += "<input style='padding:5px;' type='submit' value='Tving stopp motor' />";
   html += "</form>";
   html += "</div>";
   html += "</body></html>";
@@ -92,9 +112,24 @@ void handleRoot() {
 
 
 void handleSetDuration() {
+  // This function sets the duration value based on the input given by the user.
   if (server.hasArg("duration")) {
     duration = server.arg("duration").toInt();
   }
+  handleRoot();
+}
+
+void handleStartMotor() {
+  // This function is called whenever the motor is manually started by pressing the button on the website.
+  // This can be done if the temperature is so low so that the system needs to be started outside of the normal cycle
+  RunStepperMotor(0);
+  forced_run = true;
+  handleRoot();
+}
+
+void handleStopMotor() {
+  RunStepperMotor(1);
+  forced_run = false;
   handleRoot();
 }
 
@@ -116,7 +151,7 @@ void setup() {
   Serial.println("WiFi connected, IP: ");
   Serial.print(WiFi.localIP());
 
-  // Enable stepper motor pins 
+    // Enable stepper motor pins 
   pinMode(STEP, OUTPUT);
   pinMode(DIR, OUTPUT);
   pinMode(ENABLE, OUTPUT);
@@ -135,6 +170,8 @@ void setup() {
   // Start web server
   server.on("/", handleRoot);
   server.on("/set_duration", handleSetDuration);
+  server.on("/start_motor", handleStartMotor);
+  server.on("/stop_motor", handleStopMotor);
   server.begin();
 
   http.begin(client, serverName.c_str());
@@ -156,31 +193,20 @@ void DisplayInit() {
 }
 
 void RunStepperMotor(int direction) {
-  // Set direction of motor
-  digitalWrite(DIR, direction);
-  
-  // Enable motor
-  digitalWrite(ENABLE, LOW);
-
-  // Step motor for the specified duration
-  int steps = steps_per_rev * duration;
-  for (int i = 0; i < steps; i++) {
+  digitalWrite(ENABLE,LOW); // Enable stepper motor
+  digitalWrite(DIR, direction); // Choose direction
+  // Stepper motor rotates steps_per_rev.
+  for(int i = 0; i<steps_per_rev; i++) {
     digitalWrite(STEP, HIGH);
-    delayMicroseconds(500); // Adjust delay as needed for desired motor speed
+    delayMicroseconds(5000);
     digitalWrite(STEP, LOW);
-    delayMicroseconds(500); // Adjust delay as needed for desired motor speed
+    delayMicroseconds(5000);
   }
-
-  // Disable motor
-  digitalWrite(ENABLE, HIGH);
-  
-  // Stop motor
-  digitalWrite(STEP, LOW);
+  digitalWrite(ENABLE,HIGH); // Disable stepper motor 
 }
 
-void loop() {
-  // Get current time in milliseconds
-  unsigned long currentTime = millis();
+void loop()   {
+  unsigned long currentTime = millis(); // Get current time in milliseconds
 
   // Check if it's time to check the temperature and current hour
   if (currentTime - lastCheckTime >= checkInterval) {
@@ -193,36 +219,37 @@ void loop() {
     if (httpResponseCode > 0) {
       temperature = http.getString().toFloat();
     }
-    Serial.println(temperature);
 
-    // Get current time in hour
-    timeClient.update();
-    int current_hour = timeClient.getHours();
+    timeClient.update(); // Update timeclient
+    int current_hour = timeClient.getHours(); // Get current hour in hour
     
-    // Start mainloop
-    if (current_hour <= duration && duration != 0) {
-      if (running) {
-        RunStepperMotor(1);
-        running = false;
-      }
+    // This loop checks if the current hour is less than the value of the duration and if the duration has been set to more than 0.
+    // An example is if the current hour is 3 and the duration is 5, the script will check if the motor is running or not. 
+    // If the motor is not running, the motor will start.
+    // If the motor is running, nothing will happen, as this is the intended behaviour.
+
+    // if the current hour hour is more than the duration, and the motor is running, the motor will be stopped.
+    if (current_hour <= duration) {
+      if (!running && duration != 0) {
+        RunStepperMotor(0); // Starts stepper motor
+        running = true;
+      } 
     } 
     else {
-      if (!running) {
-        RunStepperMotor(0);
-        running = true;
+      if (running) {
+        RunStepperMotor(1); // Stops the stepper motor
+        running = false;
       }
     }
-
     DisplayInit();
-    if (running) {
-      display.println("Running...");
-    } else {
-      display.println("192.168.1.80");
+    if(duration == 0){
+      display.println("Status: AV");
     }
-    display.print(temperature);
-    display.println(" C");
+    else {
+      display.print("Status: ");
+      display.println(duration);
+    }
     display.display();
-
   }
   if(first_run) {  
     DisplayInit();
@@ -233,10 +260,9 @@ void loop() {
       display.print("Status: ");
       display.println(duration);
     }
-    display.print(temperature);
-    display.println(" C");
     display.display();
     first_run = false;
   }
+
   server.handleClient();
 }
