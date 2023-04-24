@@ -146,7 +146,9 @@ void setup() {
   // Get current time in hour
   timeClient.update();
   int current_hour = timeClient.getHours();
+}
 
+void DisplayInit() {
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(WHITE);
@@ -211,7 +213,7 @@ void loop() {
       }
     }
 
-  display.clearDisplay();
+    DisplayInit();
     if (running) {
       display.println("Running...");
     } else {
@@ -223,6 +225,7 @@ void loop() {
 
   }
   if(first_run) {  
+    DisplayInit();
     if(duration == 0){
       display.println("Status: AV");
     }
