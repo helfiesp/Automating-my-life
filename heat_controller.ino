@@ -35,8 +35,8 @@ const int ENABLE = 14;
 const int steps_per_rev = 60;
 
 // Wifi information
-const char *ssid = "*************"; //Enter your WIFI ssid
-const char *password = "**********"; //Enter your WIFI password
+const char *ssid = "**************";
+const char *password = "************";
 IPAddress local_IP(192, 168, 1, 80);
 IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 0, 0);
@@ -69,7 +69,7 @@ ESP8266WebServer server(80); // Create web server on port 80
 void handleRoot() {
   String html = "<html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>";
   html += "<style>* {font-family: Helvetica;}.heatcontrol {text-align: center;}h1, h2, p, label{ max-width: 100%; width: 90%; margin: 0 auto; margin-bottom: 10px; }";
-  html += "input[type='submit'] { padding: 10px; background-color: green; color: white; border: none; cursor: pointer; }";
+  html += "input[type='submit'] { padding: 10px; color: white; border: 1px solid; cursor: pointer; border-radius:5px;}.form-inline { display: flex; justify-content: center; } .form-inline form { margin-right: 10px; }";
   html += "</style>";
   html += "</head><body>";
   html += "<div class='heatcontrol'>";
@@ -98,15 +98,17 @@ void handleRoot() {
   html += "<form method='POST' action='/set_duration'>";
   html += "<label style='margin-right:10px;'>Sluttid:</label>";
   html += "<input style='width: 35;' type='number' name='duration' value='" + String(duration) + "' />";
-  html += "<br><br><input style='padding:5px;' type='submit' value='Endre sluttid' />";
+  html += "<br><br><input style='border-color:blue; background-color: blue;' type='submit' value='Endre sluttid' />";
   html += "</form>";
   html += "<br>";
+  html += "<div class='form-inline'>";
   html += "<form method='POST' action='/start_motor'>";
-  html += "<input style='padding:5px;' type='submit' value='Tving start motor' />";
+  html += "<input style='background-color: green; border-color: green;' type='submit' value='Tving start motor' />";
   html += "</form>";
   html += "<form method='POST' action='/stop_motor'>";
-  html += "<input style='padding:5px;' type='submit' value='Tving stopp motor' />";
+  html += "<input style='border-color: red; background-color: red;' type='submit' value='Tving stopp motor' />";
   html += "</form>";
+  html += "</div>";
   html += "</div>";
   html += "</body></html>";
   server.send(200, "text/html", html);
